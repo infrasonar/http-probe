@@ -3,7 +3,7 @@ import asyncio
 import logging
 from libprobe.asset import Asset
 from libprobe.exceptions import CheckException
-from ..utils import check_config, http_response
+from ..utils import check_config
 
 DEFAULT_TIMEOUT = 10
 DEFAULT_VERIFY_SSL = False
