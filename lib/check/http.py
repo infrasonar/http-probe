@@ -2,13 +2,15 @@ import aiohttp
 import asyncio
 import logging
 from libprobe.asset import Asset
-from libprobe.exceptions import CheckException
+from libprobe.exceptions import CheckException, IncompleteResultException
 from ..utils import check_config
 
-DEFAULT_TIMEOUT = 10
+DEFAULT_TIMEOUT = 10.0
 DEFAULT_VERIFY_SSL = False
 DEFAULT_WITH_PAYLOAD = False
 DEFAULT_ALLOW_REDIRECTS = False
+
+MAX_PAYLOAD = 512
 
 
 async def check_http(
@@ -17,30 +19,33 @@ async def check_http(
         config: dict) -> dict:
 
     try:
-        uri = config['uri']
-        timeout = config.get('timeout', DEFAULT_TIMEOUT)
-        verify_ssl = config.get('verifySSL', DEFAULT_VERIFY_SSL)
-        with_payload = config.get('withPayload', DEFAULT_WITH_PAYLOAD)
-        allow_redirects = config.get('allowRedirects', DEFAULT_ALLOW_REDIRECTS)
+        uri = str(config['uri'])
+        timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
+        verify_ssl = bool(config.get('verifySSL', DEFAULT_VERIFY_SSL))
+        with_payload = bool(config.get('withPayload', DEFAULT_WITH_PAYLOAD))
+        allow_redirects = \
+            bool(config.get('allowRedirects', DEFAULT_ALLOW_REDIRECTS))
 
         check_config(uri)
     except Exception as e:
-        logging.error(f'invalid check configuration: `{e}`')
-        return
+        msg = str(e) or type(e).__name__
+        raise CheckException(msg)
 
     try:
         state_data = await get_data(
             uri, verify_ssl, with_payload, timeout, allow_redirects)
-    except aiohttp.ClientSSLError as err:
+    except aiohttp.ClientSSLError as e:
         # Includes:
         # ClientConnectorCertificateError
         # ClientConnectorSSLError
-        logging.error(f'HTTP SSL error (uri: {uri}): `{err}`\n')
-        pass
+        msg = str(e) or type(e).__name__
+        msg = f'HTTP SSL error (uri: {uri}): `{msg}`'
+        raise CheckException(msg)
     except asyncio.TimeoutError:
-        raise CheckException('Check timed out.')
+        raise CheckException(f'HTTP check timed out (uri: {uri})')
     except Exception as e:
-        raise CheckException(f'Check error: {e.__class__.__name__}: {e}')
+        msg = str(e) or type(e).__name__
+        raise CheckException(msg)
     else:
         return state_data
 
@@ -57,6 +62,7 @@ async def get_data(uri, verify_ssl, with_payload, timeout, allow_redirects):
             ssl=verify_ssl
         ) as response:
             payload = None
+            incomplete = False
             if with_payload:
                 try:
                     payload = await response.text('UTF-8')  # str
@@ -73,6 +79,11 @@ async def get_data(uri, verify_ssl, with_payload, timeout, allow_redirects):
             }
 
             if isinstance(payload, str):
-                item['payload'] = payload
+                item['payload'] = payload[:MAX_PAYLOAD]
+                incomplete = len(payload) > MAX_PAYLOAD
 
-            return {'http': [item]}
+            result = {'http': [item]}
+            if incomplete:
+                raise IncompleteResultException(
+                    'Payload too large', result)
+            return result
