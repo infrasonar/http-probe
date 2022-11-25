@@ -43,6 +43,8 @@ async def check_http(
         raise CheckException(msg)
     except asyncio.TimeoutError:
         raise CheckException(f'HTTP check timed out (uri: {uri})')
+    except IncompleteResultException:
+        raise
     except Exception as e:
         msg = str(e) or type(e).__name__
         raise CheckException(msg)
