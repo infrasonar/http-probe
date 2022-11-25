@@ -63,7 +63,7 @@ async def get_data(uri, verify_ssl, with_payload, timeout, allow_redirects):
                 except UnicodeDecodeError:
                     payload = '<BLOB>'
 
-            response_time = asyncio.get_event_loop().time() - start,
+            response_time = asyncio.get_event_loop().time() - start
             status_code = response.status
 
             item = {
