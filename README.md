@@ -19,4 +19,3 @@ Variable          | Default                        | Description
 ```
 docker build -t http-probe . --no-cache
 ```
-# http-probe
