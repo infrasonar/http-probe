@@ -22,3 +22,28 @@ Variable            | Default                        | Description
 ```
 docker build -t http-probe . --no-cache
 ```
+
+## Dry run
+
+Available checks:
+- `http`
+
+Create a yaml file, for example _(test.yaml)_:
+
+```yaml
+asset:
+  name: "foo.local"
+  check: "http"
+  config:
+    uri: "http://example.com"
+    timeout: 5
+    verifySSL: true
+    withPayload: true
+    allowRedirects: true
+```
+
+Run the probe with the `DRY_RUN` environment variable set the the yaml file above.
+
+```
+DRY_RUN=test.yaml python main.py
+```
