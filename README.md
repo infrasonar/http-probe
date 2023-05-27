@@ -3,6 +3,8 @@
 
 # InfraSonar HTTP Probe
 
+Documentation: https://docs.infrasonar.com/collectors/probes/http/
+
 ## Environment variable
 
 Variable            | Default                        | Description
