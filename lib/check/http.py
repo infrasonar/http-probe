@@ -61,7 +61,7 @@ async def get_data(uri, verify_ssl, with_payload, timeout, allow_redirects):
         async with session.get(
             uri,
             allow_redirects=allow_redirects,
-            ssl=verify_ssl
+            ssl=verify_ssl  # type: ignore
         ) as response:
             payload = None
             incomplete = False
