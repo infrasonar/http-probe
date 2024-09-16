@@ -59,7 +59,8 @@ async def get_data(
         timeout: float,
         allow_redirects: bool) -> dict:
 
-    start = asyncio.get_event_loop().time()
+    loop = asyncio.get_running_loop()
+    start = loop.time()
     aiohttp_timeout = aiohttp.ClientTimeout(total=timeout)
     async with aiohttp.ClientSession(timeout=aiohttp_timeout) as session:
         async with session.get(
@@ -75,7 +76,7 @@ async def get_data(
                 except UnicodeDecodeError:
                     payload = '<BLOB>'
 
-            response_time = asyncio.get_event_loop().time() - start
+            response_time = loop.time() - start
             status_code = response.status
 
             item = {
