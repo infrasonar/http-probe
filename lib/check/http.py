@@ -52,16 +52,20 @@ async def check_http(
         return state_data
 
 
-async def get_data(uri, verify_ssl, with_payload, timeout, allow_redirects):
+async def get_data(
+        uri: str,
+        verify_ssl: bool,
+        with_payload: bool,
+        timeout: float,
+        allow_redirects: bool) -> dict:
+
     start = asyncio.get_event_loop().time()
     aiohttp_timeout = aiohttp.ClientTimeout(total=timeout)
-    if verify_ssl:
-        verify_ssl = None  # None for default SSL check
     async with aiohttp.ClientSession(timeout=aiohttp_timeout) as session:
         async with session.get(
             uri,
             allow_redirects=allow_redirects,
-            ssl=verify_ssl  # type: ignore
+            ssl=verify_ssl
         ) as response:
             payload = None
             incomplete = False
