@@ -13,7 +13,7 @@ DEFAULT_ALLOW_REDIRECTS = False
 
 MAX_PAYLOAD = 512
 
-USER_AGENT = f'InfrasonarHttpProbe/{__version__}'
+USER_AGENT = f'InfraSonarHttpProbe/{__version__}'
 
 
 async def check_http(
