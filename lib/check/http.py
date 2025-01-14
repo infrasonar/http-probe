@@ -4,6 +4,7 @@ import logging
 from libprobe.asset import Asset
 from libprobe.exceptions import CheckException, IncompleteResultException
 from ..utils import check_config
+from ..version import __version__
 
 DEFAULT_TIMEOUT = 10.0
 DEFAULT_VERIFY_SSL = False
@@ -11,6 +12,8 @@ DEFAULT_WITH_PAYLOAD = False
 DEFAULT_ALLOW_REDIRECTS = False
 
 MAX_PAYLOAD = 512
+
+USER_AGENT = f'InfrasonarHttpProbe/{__version__}'
 
 
 async def check_http(
@@ -62,7 +65,9 @@ async def get_data(
     loop = asyncio.get_running_loop()
     start = loop.time()
     aiohttp_timeout = aiohttp.ClientTimeout(total=timeout)
-    async with aiohttp.ClientSession(timeout=aiohttp_timeout) as session:
+    async with aiohttp.ClientSession(timeout=aiohttp_timeout, headers={
+        'User-Agent': USER_AGENT
+    }) as session:
         async with session.get(
             uri,
             allow_redirects=allow_redirects,
