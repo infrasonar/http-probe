@@ -10,7 +10,7 @@ def get_connector(loop: Optional[asyncio.AbstractEventLoop] = None):
     global _connector
     if _connector is None:
         if loop is None:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
 
         _connector = aiohttp.TCPConnector(
             limit=100,  # 100 is default
