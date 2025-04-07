@@ -1,7 +1,7 @@
 from typing import Optional
 import aiohttp
 import asyncio
-
+import logging
 
 _connector: Optional[aiohttp.TCPConnector] = None
 
@@ -12,6 +12,7 @@ def get_connector(loop: Optional[asyncio.AbstractEventLoop] = None):
         if loop is None:
             loop = asyncio.get_running_loop()
 
+        logging.info('Create TCP Connector')
         _connector = aiohttp.TCPConnector(
             limit=100,  # 100 is default
             use_dns_cache=False,

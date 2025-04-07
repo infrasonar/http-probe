@@ -65,10 +65,11 @@ async def get_data(
 
     loop = asyncio.get_running_loop()
     start = loop.time()
+    connector = get_connector(loop=loop)
     aiohttp_timeout = aiohttp.ClientTimeout(total=timeout)
     async with aiohttp.ClientSession(
             timeout=aiohttp_timeout,
-            connector=get_connector(),
+            connector=connector,
             headers={'User-Agent': USER_AGENT}) as session:
         async with session.get(
             uri,
