@@ -1,23 +1,18 @@
 from typing import Optional
 import aiohttp
 import asyncio
-import logging
-
-_connector: Optional[aiohttp.TCPConnector] = None
 
 
-def get_connector(loop: Optional[asyncio.AbstractEventLoop] = None):
-    global _connector
-    if _connector is None:
-        if loop is None:
-            loop = asyncio.get_running_loop()
+def get_connector(
+            loop: Optional[asyncio.AbstractEventLoop] = None
+        ) -> aiohttp.TCPConnector:
+    if loop is None:
+        loop = asyncio.get_event_loop()
 
-        logging.info('Create TCP Connector')
-        _connector = aiohttp.TCPConnector(
-            limit=100,  # 100 is default
-            use_dns_cache=False,
-            enable_cleanup_closed=True,
-            force_close=True,
-            loop=loop,
-        )
-    return _connector
+    return aiohttp.TCPConnector(
+        limit=100,  # 100 is default
+        use_dns_cache=False,
+        enable_cleanup_closed=True,
+        force_close=True,
+        loop=loop,
+    )
