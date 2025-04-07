@@ -4,6 +4,7 @@ import logging
 from libprobe.asset import Asset
 from libprobe.exceptions import CheckException, IncompleteResultException
 from ..utils import check_config
+from ..connector import connector
 from ..version import __version__
 
 DEFAULT_TIMEOUT = 10.0
@@ -65,9 +66,10 @@ async def get_data(
     loop = asyncio.get_running_loop()
     start = loop.time()
     aiohttp_timeout = aiohttp.ClientTimeout(total=timeout)
-    async with aiohttp.ClientSession(timeout=aiohttp_timeout, headers={
-        'User-Agent': USER_AGENT
-    }) as session:
+    async with aiohttp.ClientSession(
+            timeout=aiohttp_timeout,
+            connector=connector,
+            headers={'User-Agent': USER_AGENT}) as session:
         async with session.get(
             uri,
             allow_redirects=allow_redirects,
