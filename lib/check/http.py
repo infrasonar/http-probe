@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 import logging
 from libprobe.asset import Asset
+from libprobe.check import Check
 from libprobe.exceptions import CheckException, IncompleteResultException
 from ..utils import check_config
 from ..connector import get_connector
@@ -17,43 +18,45 @@ MAX_PAYLOAD = 512
 USER_AGENT = f'InfraSonarHttpProbe/{__version__}'
 
 
-async def check_http(
-        asset: Asset,
-        asset_config: dict,
-        config: dict) -> dict:
+class CheckHttp(Check):
+    key = 'http'
 
-    try:
-        uri = str(config['uri'])
-        timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
-        verify_ssl = bool(config.get('verifySSL', DEFAULT_VERIFY_SSL))
-        with_payload = bool(config.get('withPayload', DEFAULT_WITH_PAYLOAD))
-        allow_redirects = \
-            bool(config.get('allowRedirects', DEFAULT_ALLOW_REDIRECTS))
+    @staticmethod
+    async def run(asset: Asset, local_config: dict, config: dict) -> dict:
 
-        check_config(uri)
-    except Exception as e:
-        msg = str(e) or type(e).__name__
-        raise CheckException(msg)
+        try:
+            uri = str(config['uri'])
+            timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
+            verify_ssl = bool(config.get('verifySSL', DEFAULT_VERIFY_SSL))
+            with_payload = \
+                bool(config.get('withPayload', DEFAULT_WITH_PAYLOAD))
+            allow_redirects = \
+                bool(config.get('allowRedirects', DEFAULT_ALLOW_REDIRECTS))
 
-    try:
-        state_data = await get_data(
-            uri, verify_ssl, with_payload, timeout, allow_redirects)
-    except aiohttp.ClientSSLError as e:
-        # Includes:
-        # ClientConnectorCertificateError
-        # ClientConnectorSSLError
-        msg = str(e) or type(e).__name__
-        msg = f'HTTP SSL error (uri: {uri}): `{msg}`'
-        raise CheckException(msg)
-    except asyncio.TimeoutError:
-        raise CheckException(f'HTTP check timed out (uri: {uri})')
-    except IncompleteResultException:
-        raise
-    except Exception as e:
-        msg = str(e) or type(e).__name__
-        raise CheckException(msg)
-    else:
-        return state_data
+            check_config(uri)
+        except Exception as e:
+            msg = str(e) or type(e).__name__
+            raise CheckException(msg)
+
+        try:
+            state_data = await get_data(
+                uri, verify_ssl, with_payload, timeout, allow_redirects)
+        except aiohttp.ClientSSLError as e:
+            # Includes:
+            # ClientConnectorCertificateError
+            # ClientConnectorSSLError
+            msg = str(e) or type(e).__name__
+            msg = f'HTTP SSL error (uri: {uri}): `{msg}`'
+            raise CheckException(msg)
+        except asyncio.TimeoutError:
+            raise CheckException(f'HTTP check timed out (uri: {uri})')
+        except IncompleteResultException:
+            raise
+        except Exception as e:
+            msg = str(e) or type(e).__name__
+            raise CheckException(msg)
+        else:
+            return state_data
 
 
 async def get_data(
