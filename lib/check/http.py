@@ -17,14 +17,6 @@ MAX_PAYLOAD = 512
 
 USER_AGENT = f'InfraSonarHttpProbe/{__version__}'
 
-# Allow unsafe legacy renegotiation when verify SSL is disabled
-SSL_OP_NO_UNSAFE_LEGACY_RENEGOTIATION = 0x00040000
-SSL_CONTEXT_UNSAFE_NO_CHECK = ssl.create_default_context()
-SSL_CONTEXT_UNSAFE_NO_CHECK.options &= ~SSL_OP_NO_UNSAFE_LEGACY_RENEGOTIATION
-SSL_CONTEXT_UNSAFE_NO_CHECK.check_hostname = False
-SSL_CONTEXT_UNSAFE_NO_CHECK.verify_mode = ssl.CERT_NONE
-SSL_CONTEXT_UNSAFE_NO_CHECK.minimum_version = ssl.TLSVersion.TLSv1
-
 
 class CheckHttp(Check):
     key = 'http'
@@ -80,18 +72,11 @@ async def get_data(
     aiohttp_timeout = aiohttp.ClientTimeout(total=timeout)
     async with aiohttp.ClientSession(
             timeout=aiohttp_timeout,
-            connector=get_connector(loop=loop),
+            connector=get_connector(verify_ssl, loop=loop),
             headers={'User-Agent': USER_AGENT}) as session:
 
-        ssl_context: bool | ssl.SSLContext = True
-        if verify_ssl is False:
-            ssl_context = SSL_CONTEXT_UNSAFE_NO_CHECK
-
-        async with session.get(
-            uri,
-            allow_redirects=allow_redirects,
-            ssl=ssl_context
-        ) as response:
+        async with session.get(uri,
+                               allow_redirects=allow_redirects) as response:
             payload = None
             incomplete = False
             if with_payload:
