@@ -72,13 +72,10 @@ async def get_data(
     aiohttp_timeout = aiohttp.ClientTimeout(total=timeout)
     async with aiohttp.ClientSession(
             timeout=aiohttp_timeout,
-            connector=get_connector(loop=loop),
+            connector=get_connector(verify_ssl, loop=loop),
             headers={'User-Agent': USER_AGENT}) as session:
-        async with session.get(
-            uri,
-            allow_redirects=allow_redirects,
-            ssl=verify_ssl
-        ) as response:
+        async with session.get(uri,
+                               allow_redirects=allow_redirects) as response:
             payload = None
             incomplete = False
             if with_payload:
