@@ -23,6 +23,7 @@ SSL_CONTEXT_UNSAFE_NO_CHECK = ssl.create_default_context()
 SSL_CONTEXT_UNSAFE_NO_CHECK.options &= ~SSL_OP_NO_UNSAFE_LEGACY_RENEGOTIATION
 SSL_CONTEXT_UNSAFE_NO_CHECK.check_hostname = False
 SSL_CONTEXT_UNSAFE_NO_CHECK.verify_mode = ssl.CERT_NONE
+SSL_CONTEXT_UNSAFE_NO_CHECK.minimum_version = ssl.TLSVersion.TLSv1
 
 
 class CheckHttp(Check):
