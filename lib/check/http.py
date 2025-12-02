@@ -1,7 +1,8 @@
+import ssl
 import aiohttp
 import asyncio
-import logging
 from libprobe.asset import Asset
+from libprobe.check import Check
 from libprobe.exceptions import CheckException, IncompleteResultException
 from ..utils import check_config
 from ..connector import get_connector
@@ -16,44 +17,54 @@ MAX_PAYLOAD = 512
 
 USER_AGENT = f'InfraSonarHttpProbe/{__version__}'
 
+# Allow unsafe legacy renegotiation when verify SSL is disabled
+SSL_OP_NO_UNSAFE_LEGACY_RENEGOTIATION = 0x00040000
+SSL_CONTEXT_UNSAFE_NO_CHECK = ssl.create_default_context()
+SSL_CONTEXT_UNSAFE_NO_CHECK.options &= ~SSL_OP_NO_UNSAFE_LEGACY_RENEGOTIATION
+SSL_CONTEXT_UNSAFE_NO_CHECK.check_hostname = False
+SSL_CONTEXT_UNSAFE_NO_CHECK.verify_mode = ssl.CERT_NONE
 
-async def check_http(
-        asset: Asset,
-        asset_config: dict,
-        config: dict) -> dict:
 
-    try:
-        uri = str(config['uri'])
-        timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
-        verify_ssl = bool(config.get('verifySSL', DEFAULT_VERIFY_SSL))
-        with_payload = bool(config.get('withPayload', DEFAULT_WITH_PAYLOAD))
-        allow_redirects = \
-            bool(config.get('allowRedirects', DEFAULT_ALLOW_REDIRECTS))
+class CheckHttp(Check):
+    key = 'http'
+    unchanged_eol = 0
 
-        check_config(uri)
-    except Exception as e:
-        msg = str(e) or type(e).__name__
-        raise CheckException(msg)
+    @staticmethod
+    async def run(asset: Asset, local_config: dict, config: dict) -> dict:
 
-    try:
-        state_data = await get_data(
-            uri, verify_ssl, with_payload, timeout, allow_redirects)
-    except aiohttp.ClientSSLError as e:
-        # Includes:
-        # ClientConnectorCertificateError
-        # ClientConnectorSSLError
-        msg = str(e) or type(e).__name__
-        msg = f'HTTP SSL error (uri: {uri}): `{msg}`'
-        raise CheckException(msg)
-    except asyncio.TimeoutError:
-        raise CheckException(f'HTTP check timed out (uri: {uri})')
-    except IncompleteResultException:
-        raise
-    except Exception as e:
-        msg = str(e) or type(e).__name__
-        raise CheckException(msg)
-    else:
-        return state_data
+        try:
+            uri = str(config['uri'])
+            timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
+            verify_ssl = bool(config.get('verifySSL', DEFAULT_VERIFY_SSL))
+            with_payload = \
+                bool(config.get('withPayload', DEFAULT_WITH_PAYLOAD))
+            allow_redirects = \
+                bool(config.get('allowRedirects', DEFAULT_ALLOW_REDIRECTS))
+
+            check_config(uri)
+        except Exception as e:
+            msg = str(e) or type(e).__name__
+            raise CheckException(msg)
+
+        try:
+            state_data = await get_data(
+                uri, verify_ssl, with_payload, timeout, allow_redirects)
+        except aiohttp.ClientSSLError as e:
+            # Includes:
+            # ClientConnectorCertificateError
+            # ClientConnectorSSLError
+            msg = str(e) or type(e).__name__
+            msg = f'HTTP SSL error (uri: {uri}): `{msg}`'
+            raise CheckException(msg)
+        except asyncio.TimeoutError:
+            raise CheckException(f'HTTP check timed out (uri: {uri})')
+        except IncompleteResultException:
+            raise
+        except Exception as e:
+            msg = str(e) or type(e).__name__
+            raise CheckException(msg)
+        else:
+            return state_data
 
 
 async def get_data(
@@ -70,10 +81,15 @@ async def get_data(
             timeout=aiohttp_timeout,
             connector=get_connector(loop=loop),
             headers={'User-Agent': USER_AGENT}) as session:
+
+        ssl_context: bool | ssl.SSLContext = True
+        if verify_ssl is False:
+            ssl_context = SSL_CONTEXT_UNSAFE_NO_CHECK
+
         async with session.get(
             uri,
             allow_redirects=allow_redirects,
-            ssl=verify_ssl
+            ssl=ssl_context
         ) as response:
             payload = None
             incomplete = False
