@@ -20,7 +20,7 @@ def get_connector(
     if loop is None:
         loop = asyncio.get_running_loop()
 
-    ssl_context: None | ssl.SSLContext = None
+    ssl_context: bool | ssl.SSLContext = True
     if verify_ssl is False:
         ssl_context = SSL_CONTEXT_UNSAFE_NO_CHECK
 
@@ -29,6 +29,6 @@ def get_connector(
         use_dns_cache=False,
         enable_cleanup_closed=True,
         force_close=True,
-        ssl_context=ssl_context,
+        ssl=ssl_context,
         loop=loop,
     )
