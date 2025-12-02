@@ -4,9 +4,7 @@ ENV OPENSSL_CONF_PATH=/etc/ssl/openssl.cnf
 RUN if [ -f "$OPENSSL_CONF_PATH" ]; then \
         cp "$OPENSSL_CONF_PATH" "$OPENSSL_CONF_PATH.bak" && \
         \
-        # Use sed to add 'CipherString = DEFAULT@SECLEVEL=0' to the main configuration section.
-        # This targets the [default_sect] or the main body of the config.
-        # This tells OpenSSL to drop all security restrictions.
+        # Tell OpenSSL to drop all security restrictions (for legacy http checks without SSL verification)
         sed -i '/\[default_sect\]/a CipherString = DEFAULT@SECLEVEL=0' "$OPENSSL_CONF_PATH" \
     ; else \
         echo "Error: openssl.cnf not found at $OPENSSL_CONF_PATH" && exit 1 \
