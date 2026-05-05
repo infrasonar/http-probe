@@ -1,4 +1,3 @@
-from typing import Optional
 import ssl
 import aiohttp
 import asyncio
@@ -23,7 +22,7 @@ SSL_CONTEXT_UNSAFE_NO_CHECK.set_ciphers('DEFAULT@SECLEVEL=0')
 
 def get_connector(
             verify_ssl: bool,
-            loop: Optional[asyncio.AbstractEventLoop] = None
+            loop: asyncio.AbstractEventLoop | None = None
         ) -> aiohttp.TCPConnector:
     if loop is None:
         loop = asyncio.get_running_loop()
